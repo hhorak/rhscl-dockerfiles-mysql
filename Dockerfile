@@ -1,4 +1,4 @@
-FROM centos:centos7
+FROM rhel7:7.1-24
 
 # MySQL image for OpenShift.
 #
@@ -10,8 +10,6 @@ FROM centos:centos7
 #  * $MYSQL_DATABASE - Name of the database to create
 #  * $MYSQL_ROOT_PASSWORD (Optional) - Password for the 'root' MySQL account
 
-MAINTAINER SoftwareCollections.org <sclorg@redhat.com>
-
 ENV MYSQL_VERSION=5.6 \
     HOME=/var/lib/mysql
 
@@ -20,14 +18,22 @@ LABEL io.k8s.description="MySQL is a multi-user, multi-threaded SQL database ser
       io.openshift.expose-services="3306:mysql" \
       io.openshift.tags="database,mysql,mysql56,rh-mysql56"
 
+# Labels consumed by Red Hat build service
+LABEL BZComponent="rh-mysql56-docker" \
+      Name="rhscl/mysql-56-rhel7" \
+      Version="5.6" \
+      Release="10" \
+      Architecture="x86_64"
+
 EXPOSE 3306
 
 # This image must forever use UID 27 for mysql user so our volumes are
 # safe in the future. This should *never* change, the last test is there
 # to make sure of that.
-RUN rpmkeys --import file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 && \
-    yum -y --setopt=tsflags=nodocs install https://www.softwarecollections.org/en/scls/rhscl/rh-mysql56/epel-7-x86_64/download/rhscl-rh-mysql56-epel-7-x86_64.noarch.rpm && \
-    yum -y --setopt=tsflags=nodocs install gettext hostname bind-utils rh-mysql56 && \
+RUN yum install -y yum-utils gettext hostname && \
+    yum-config-manager --enable rhel-server-rhscl-7-rpms && \
+    yum-config-manager --enable rhel-7-server-optional-rpms && \
+    yum install -y --setopt=tsflags=nodocs bind-utils rh-mysql56 && \
     yum clean all && \
     mkdir -p /var/lib/mysql/data && chown -R mysql.0 /var/lib/mysql && \
     test "$(id mysql)" = "uid=27(mysql) gid=27(mysql) groups=27(mysql)"
