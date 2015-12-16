@@ -44,12 +44,12 @@ matches the user UID or name which is running inside the container.**
 Usage
 ---------------------------------
 
-For this, we will assume that you are using the `centos/mysql-56-centos7` image.
+For this, we will assume that you are using the `openshift/mysql-55-centos7` image.
 If you want to set only the mandatory environment variables and not store
 the database in a host directory, execute the following command:
 
 ```
-$ docker run -d --name mysql_database -e MYSQL_USER=user -e MYSQL_PASSWORD=pass -e MYSQL_DATABASE=db -p 3306:3306 centos/mysql-56-centos7
+$ docker run -d --name mysql_database -e MYSQL_USER=user -e MYSQL_PASSWORD=pass -e MYSQL_DATABASE=db -p 3306:3306 openshift/mysql-55-centos7
 ```
 
 This will create a container named `mysql_database` running MySQL with database
