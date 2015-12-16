@@ -59,7 +59,23 @@ function initialize_database() {
   mysql_install_db --rpm --datadir=$MYSQL_DATADIR
   start_local_mysql "$@"
 
+  mysqladmin $admin_flags -f drop test
+
   [ -v MYSQL_RUNNING_AS_SLAVE ] && return
+
+  if [ -v MYSQL_RUNNING_AS_MASTER ]; then
+    # Save master status into a separate database.
+    STATUS_INFO=$(mysql $admin_flags -e 'SHOW MASTER STATUS\G')
+    BINLOG_POSITION=$(echo "$STATUS_INFO" | grep 'Position:' | head -n 1 | sed -e 's/^\s*Position: //')
+    BINLOG_FILE=$(echo "$STATUS_INFO" | grep 'File:' | head -n 1 | sed -e 's/^\s*File: //')
+
+    mysqladmin $admin_flags create replication
+mysql $admin_flags <<EOSQL
+    use replication
+    CREATE TABLE replication (File VARCHAR(1024), Position VARCHAR(256));
+    INSERT INTO replication (File, Position) VALUES ('$BINLOG_FILE', '$BINLOG_POSITION');
+EOSQL
+  fi
 
   # Do not care what option is compulsory here, just create what is specified
   if [ -v MYSQL_USER ]; then

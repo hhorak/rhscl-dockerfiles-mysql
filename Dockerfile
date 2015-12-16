@@ -1,4 +1,4 @@
-FROM centos:centos7
+FROM rhel7.2
 
 # MySQL image for OpenShift.
 #
@@ -10,32 +10,38 @@ FROM centos:centos7
 #  * $MYSQL_DATABASE - Name of the database to create
 #  * $MYSQL_ROOT_PASSWORD (Optional) - Password for the 'root' MySQL account
 
-MAINTAINER SoftwareCollections.org <sclorg@redhat.com>
-
-ENV MYSQL_VERSION=5.6 \
+ENV MYSQL_VERSION=5.5 \
     HOME=/var/lib/mysql
 
 LABEL io.k8s.description="MySQL is a multi-user, multi-threaded SQL database server" \
-      io.k8s.display-name="MySQL 5.6" \
+      io.k8s.display-name="MySQL 5.5" \
       io.openshift.expose-services="3306:mysql" \
-      io.openshift.tags="database,mysql,mysql56,rh-mysql56"
+      io.openshift.tags="database,mysql,mysql55"
+
+# Labels consumed by Red Hat build service
+LABEL BZComponent="mysql55-docker" \
+      Name="openshift3/mysql-55-rhel7" \
+      Version="5.5" \
+      Release="1" \
+      Architecture="x86_64"
 
 EXPOSE 3306
 
 # This image must forever use UID 27 for mysql user so our volumes are
 # safe in the future. This should *never* change, the last test is there
 # to make sure of that.
-RUN rpmkeys --import file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 && \
-    yum -y --setopt=tsflags=nodocs install https://www.softwarecollections.org/en/scls/rhscl/rh-mysql56/epel-7-x86_64/download/rhscl-rh-mysql56-epel-7-x86_64.noarch.rpm && \
-    yum -y --setopt=tsflags=nodocs install gettext hostname bind-utils rh-mysql56 && \
+RUN yum install -y yum-utils gettext hostname && \
+    yum-config-manager --enable rhel-server-rhscl-7-rpms && \
+    yum-config-manager --enable rhel-7-server-optional-rpms && \
+    yum install -y --setopt=tsflags=nodocs bind-utils mysql55 && \
     yum clean all && \
     mkdir -p /var/lib/mysql/data && chown -R mysql.0 /var/lib/mysql && \
     test "$(id mysql)" = "uid=27(mysql) gid=27(mysql) groups=27(mysql)"
 
 # Get prefix path and path to scripts rather than hard-code them in scripts
 ENV CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/mysql \
-    MYSQL_PREFIX=/opt/rh/rh-mysql56/root/usr \
-    ENABLED_COLLECTIONS=rh-mysql56
+    MYSQL_PREFIX=/opt/rh/mysql55/root/usr \
+    ENABLED_COLLECTIONS=mysql55
 
 # When bash is started non-interactively, to run a shell script, for example it
 # looks for this variable and source the content of this file. This will enable
